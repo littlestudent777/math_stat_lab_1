@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from math import sqrt, ceil
+from math import sqrt
 from scipy.stats import norm, cauchy, uniform
 from scipy.special import gamma
 
@@ -13,30 +13,34 @@ distributions = {
     "Normal": {
         "params": {"mu": 0.0, "sigma": 1.0},
         "generator": lambda params, size: np.random.normal(params["mu"], params["sigma"], size),
-        "density": lambda x, params: norm(params["mu"], params["sigma"]).pdf(x)
+        "density": lambda x, params: norm(params["mu"], params["sigma"]).pdf(x),
+        # The number of histogram bins is approximately the square root of each sample size
+        "bins": [3, 7, 10]
     },
     "Cauchy": {
         "params": {"x0": 0.0, "gamma": 1.0},
         "generator": lambda params, size: params["x0"] + params["gamma"] * np.random.standard_cauchy(size),
-        "density": lambda x, params: cauchy(params["x0"], params["gamma"]).pdf(x)
+        "density": lambda x, params: cauchy(params["x0"], params["gamma"]).pdf(x),
+        # For Cauchy distribution bins have to be bigger in order to avoid empty spaces in the histogram
+        "bins": [2, 3, 4]
     },
     "Poisson": {
         "params": {"mu": 10.0},
         "generator": lambda params, size: np.random.poisson(params["mu"], size),
-        "density": lambda x, params: (params["mu"] ** x) * np.exp(-params["mu"]) / gamma(x + 1)
+        "density": lambda x, params: (params["mu"] ** x) * np.exp(-params["mu"]) / gamma(x + 1),
+        "bins": [3, 6, 9]
     },
     "Uniform": {
         "params": {"a": -sqrt(3), "b": sqrt(3)},
         "generator": lambda params, size: np.random.uniform(params["a"], params["b"], size),
-        "density": lambda x, params: uniform(params["a"], params["b"] - params["a"]).pdf(x)
+        "density": lambda x, params: uniform(params["a"], params["b"] - params["a"]).pdf(x),
+        "bins": [3, 7, 10]
     }
 }
 
 
 # Plots distribution graphs and histograms and saves them as png
 def plot_distributions(sample_sizes: list[int]) -> None:
-    # The number of histogram bins is decided based on the square root of each sample size
-    bins = [ceil(sqrt(size)) for size in sample_sizes]
 
     # Iterate through all distributions
     for name, dist in distributions.items():
@@ -63,7 +67,7 @@ def plot_distributions(sample_sizes: list[int]) -> None:
             plt.subplot(1, len(sample_sizes), i + 1)
 
             # Plot the histogram of the sample
-            plt.hist(sample, bins=bins[i], density=True,
+            plt.hist(sample, bins=dist["bins"][i], density=True,
                      color='white', edgecolor='black', alpha=0.7)
 
             # Plot the probability density function curve over the histogram
@@ -76,7 +80,7 @@ def plot_distributions(sample_sizes: list[int]) -> None:
             # Special handling for the Cauchy distribution with large sample sizes
             # - The Cauchy distribution has a heavy tail, so the density range can vary significantly
             # - To better visualize the data, logarithmic y-axis is used for large samples
-            if name == "Cauchy" and size > 500:
+            if name == "Cauchy" and size >= 50:
                 plt.yscale('log')
                 plt.ylabel('log of density')
 

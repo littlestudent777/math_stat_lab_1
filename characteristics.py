@@ -21,6 +21,14 @@ def calculate_statistics(sample: np.ndarray) -> np.ndarray:
     return np.array([x, med_x, z_q])
 
 
+# Function for formatting numbers depending on the index of the string
+def format_rows(val: float, index: str) -> str:
+    if index == "E(z)^{(4)}":
+        return f"{val:.2g}"  # Two significant figures for E(z)
+    elif index == "D(z)^{(5)}":
+        return f"{val:.4g}"  # Four significant figures for D(z)
+
+
 # Calculates and outputs statistical characteristics for different sample types
 def print_characteristics(sample_size: list[int]) -> None:
     # A dictionary of sample generators and their names
@@ -52,20 +60,21 @@ def print_characteristics(sample_size: list[int]) -> None:
             # Create and display a DataFrame containing statistics
             df = pd.DataFrame(
                 [means, variances],
-                columns=["x", "med x", "z_Q"],
-                index=["E(z)", "D(z)"]
+                columns=["x^{(1)}", "med x^{(2)}", "z_Q^{(3)}"],
+                index=["E(z)^{(4)}", "D(z)^{(5)}"]
             )
 
-            # Convert into LATEX tables
-            latex_str = df.to_latex(index=True,
-                                    caption='Sample size {}'.format(size),
-                                    escape=False)
+            # Apply formatting to each row of the DataFrame
+            formatted_df = df.apply(lambda row: row.apply(format_rows, index=row.name), axis=1)
+
+            latex_str = formatted_df.to_latex(
+                index=True,
+                caption=f'Sample size {size}',
+                escape=False
+            )
 
             latex_str = latex_str.replace('\\begin{table}', '\\begin{table}[H] \\centering')
             latex_str = latex_str.replace('\\caption{', '\\caption*{')
             print(latex_str)
 
         print('\\end{center}\n')
-
-            # print(f"{name} distribution, n = {size}")
-            # display(df)
